@@ -108,6 +108,46 @@ app.post('/mcp', async (req, res) => {
     let result;
     
     switch (method) {
+      case 'initialize':
+        result = {
+          protocolVersion: '2024-11-05',
+          capabilities: {
+            tools: {}
+          },
+          serverInfo: {
+            name: 'mcp-server-trello',
+            version: '1.3.1'
+          }
+        };
+        break;
+        
+      case 'tools/list':
+        result = {
+          tools: [
+            {
+              name: 'get_cards_by_list_id',
+              description: 'Get cards from a specific list',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  listId: { type: 'string', description: 'The ID of the list' }
+                },
+                required: ['listId']
+              }
+            },
+            {
+              name: 'list_boards',
+              description: 'List all accessible boards',
+              inputSchema: {
+                type: 'object',
+                properties: {}
+              }
+            }
+            // Add more tools as needed
+          ]
+        };
+        break;
+        
       case 'get_cards_by_list_id':
         result = await trelloClient.getCardsByList(params.boardId, params.listId);
         break;
