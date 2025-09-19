@@ -143,89 +143,101 @@ app.post('/mcp', async (req, res) => {
           tools: [
             {
               name: 'search',
-              description: 'Search for content in Trello boards, lists, and cards',
+              description: 'Search for content in Trello boards, lists, and cards. Use this to find specific boards or content.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   query: { 
                     type: 'string', 
-                    description: 'Search query to find boards, lists, or cards' 
+                    description: 'Search query to find boards, lists, or cards. Examples: "SAV", "projet", "Maxence"' 
                   }
                 },
-                required: ['query']
+                required: ['query'],
+                additionalProperties: false
               }
             },
             {
               name: 'fetch',
-              description: 'Fetch detailed information about a specific Trello resource',
+              description: 'Fetch detailed information about a specific Trello resource (board, list, or card) using its ID.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   id: { 
                     type: 'string', 
-                    description: 'ID of the resource to fetch' 
+                    description: 'The unique ID of the Trello resource to fetch (board, list, or card ID)' 
                   }
                 },
-                required: ['id']
+                required: ['id'],
+                additionalProperties: false
               }
             },
             {
               name: 'list_boards',
-              description: 'List all accessible Trello boards',
+              description: 'List all accessible Trello boards. Returns the 10 most recent open boards with basic information.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {},
-                required: []
+                required: [],
+                additionalProperties: false
               }
             },
             {
               name: 'get_cards_by_list_id',
-              description: 'Get cards from a specific Trello list',
+              description: 'Get all cards from a specific Trello list. Use this to see what tasks or items are in a list.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list' 
+                    description: 'The ID of the Trello list to get cards from' 
                   }
                 },
-                required: ['listId']
+                required: ['listId'],
+                additionalProperties: false
               }
             },
             {
               name: 'get_lists',
-              description: 'Get all lists from a Trello board',
+              description: 'Get all lists from a specific Trello board. Use this to see the structure of a board.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   boardId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello board' 
+                    description: 'The ID of the Trello board to get lists from' 
                   }
                 },
-                required: ['boardId']
+                required: ['boardId'],
+                additionalProperties: false
               }
             },
             {
               name: 'create_card',
-              description: 'Create a new card in a Trello list',
+              description: 'Create a new card in a Trello list. Use this to add new tasks or items to a list.',
               inputSchema: {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list' 
+                    description: 'The ID of the Trello list where to create the card' 
                   },
                   name: { 
                     type: 'string', 
-                    description: 'The name of the card' 
+                    description: 'The name/title of the new card' 
                   },
                   desc: { 
                     type: 'string', 
-                    description: 'The description of the card' 
+                    description: 'Optional description for the new card' 
                   }
                 },
-                required: ['listId', 'name']
+                required: ['listId', 'name'],
+                additionalProperties: false
               }
             }
           ]
