@@ -161,16 +161,12 @@ app.post('/mcp', async (req, res) => {
               inputSchema: {
                 type: 'object',
                 properties: {
-                  resource: { 
-                    type: 'string', 
-                    description: 'Type of resource (board, list, card)' 
-                  },
                   id: { 
                     type: 'string', 
                     description: 'ID of the resource to fetch' 
                   }
                 },
-                required: ['resource', 'id']
+                required: ['id']
               }
             },
             {
@@ -249,60 +245,88 @@ app.post('/mcp', async (req, res) => {
             // Recherche simple dans les tableaux Trello
             const allBoards = await trelloClient.listBoards();
             const query = toolArguments.query.toLowerCase();
-            result = allBoards
+            const searchResults = allBoards
               .filter(board => 
                 board.name.toLowerCase().includes(query) || 
                 board.desc.toLowerCase().includes(query)
               )
               .map(board => ({
                 id: board.id,
-                name: board.name,
-                desc: board.desc,
-                url: board.url,
-                shortUrl: board.shortUrl,
-                closed: board.closed
+                title: board.name,
+                url: board.url
               }));
+            
+            // Format requis par OpenAI MCP
+            result = {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({ results: searchResults })
+                }
+              ]
+            };
             break;
             
           case 'fetch':
             // Récupération d'informations détaillées sur une ressource
-            const resource = toolArguments.resource;
             const id = toolArguments.id;
             
-            switch (resource) {
-              case 'board':
-                const board = await trelloClient.getBoardById(id);
-                result = {
-                  id: board.id,
-                  name: board.name,
-                  desc: board.desc,
-                  url: board.url,
-                  shortUrl: board.shortUrl,
+            // Essayer de récupérer comme tableau d'abord
+            try {
+              const board = await trelloClient.getBoardById(id);
+              const fetchResult = {
+                id: board.id,
+                title: board.name,
+                text: board.desc || `Tableau Trello: ${board.name}`,
+                url: board.url,
+                metadata: {
+                  type: 'board',
                   closed: board.closed,
-                  idOrganization: board.idOrganization
-                };
-                break;
-              case 'list':
+                  organization: board.idOrganization
+                }
+              };
+              
+              // Format requis par OpenAI MCP
+              result = {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(fetchResult)
+                  }
+                ]
+              };
+            } catch (error) {
+              // Si ce n'est pas un tableau, essayer comme liste
+              try {
                 const lists = await trelloClient.getLists(id);
-                result = lists.map(list => ({
+                if (lists.length === 0) {
+                  throw new Error(`No resource found with ID ${id}`);
+                }
+                const list = lists[0];
+                const fetchResult = {
                   id: list.id,
-                  name: list.name,
-                  closed: list.closed,
-                  idBoard: list.idBoard
-                }));
-                break;
-              case 'card':
-                const cards = await trelloClient.getCardsByList(undefined, id);
-                result = cards.map(card => ({
-                  id: card.id,
-                  name: card.name,
-                  desc: card.desc,
-                  closed: card.closed,
-                  idList: card.idList
-                }));
-                break;
-              default:
-                throw new Error(`Unknown resource type: ${resource}`);
+                  title: list.name,
+                  text: `Liste Trello: ${list.name}`,
+                  url: `https://trello.com/b/${id}`,
+                  metadata: {
+                    type: 'list',
+                    closed: list.closed,
+                    boardId: list.idBoard
+                  }
+                };
+                
+                // Format requis par OpenAI MCP
+                result = {
+                  content: [
+                    {
+                      type: "text",
+                      text: JSON.stringify(fetchResult)
+                    }
+                  ]
+                };
+              } catch (error2) {
+                throw new Error(`No resource found with ID ${id}`);
+              }
             }
             break;
             
