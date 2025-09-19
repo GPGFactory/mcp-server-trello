@@ -11,13 +11,14 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Logging middleware
+// Logging middleware - réduit pour éviter la limite Railway
 app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] ${req.method} ${req.path} - ${req.get('User-Agent') || 'Unknown'}`;
-  console.log(logMessage);
-  // Force output to stderr as well for Railway
-  console.error(logMessage);
+  // Log seulement les requêtes importantes, pas toutes
+  if (req.path === '/mcp' || req.path === '/test') {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${req.method} ${req.path}`;
+    console.log(logMessage);
+  }
   next();
 });
 
@@ -56,7 +57,8 @@ app.get('/', (req, res) => {
       test: '/test'
     }
   };
-  console.log('Root endpoint accessed:', response);
+  // Log réduit pour éviter la limite Railway
+  console.log('Root endpoint accessed');
   res.json(response);
 });
 
@@ -72,15 +74,16 @@ app.get('/test', (req, res) => {
       token: process.env.TRELLO_TOKEN ? 'Set' : 'Missing'
     }
   };
-  console.log('Test endpoint accessed:', testResponse);
+  // Log réduit pour éviter la limite Railway
+  console.log('Test endpoint accessed');
   res.json(testResponse);
 });
 
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
   try {
-    console.log('MCP Request received:', JSON.stringify(req.body, null, 2));
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    // Log réduit pour éviter la limite Railway - seulement la méthode
+    console.log(`MCP Request: ${req.body.method || 'unknown'}`);
     
     // Support both JSON-RPC format and simple format
     let method, params, id;
@@ -192,7 +195,8 @@ app.post('/mcp', async (req, res) => {
         const toolName = params.name;
         const toolArguments = params.arguments || {};
         
-        console.log(`Tool call: ${toolName}`, toolArguments);
+        // Log réduit pour éviter la limite Railway
+        console.log(`Tool: ${toolName}`);
         
         switch (toolName) {
           case 'list_boards':
@@ -348,7 +352,7 @@ app.post('/mcp', async (req, res) => {
         
       case 'notifications/initialized':
         // Handle initialization notification - no response needed for notifications
-        console.log('Initialization notification received');
+        // Pas de log pour éviter la limite Railway
         return res.status(200).json({});
         
       default:
@@ -362,7 +366,8 @@ app.post('/mcp', async (req, res) => {
       id: id
     } : { result };
     
-    console.log('MCP Response:', JSON.stringify(response, null, 2));
+    // Log réduit pour éviter la limite Railway
+    console.log(`MCP Response: ${method}`);
     res.json(response);
     
   } catch (error) {
