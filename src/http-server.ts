@@ -81,7 +81,7 @@ app.get('/test', (req, res) => {
 
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
-  // Timeout de 10 secondes pour respecter les spécifications OpenAI
+  // Timeout de 5 secondes pour éviter les timeouts OpenAI
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(500).json({
@@ -93,7 +93,7 @@ app.post('/mcp', async (req, res) => {
         id: req.body.id || null
       });
     }
-  }, 10000);
+  }, 5000);
 
   try {
     // Log réduit pour éviter la limite Railway - seulement la méthode
@@ -332,16 +332,16 @@ app.post('/mcp', async (req, res) => {
             
           case 'list_boards':
             const boards = await trelloClient.listBoards();
-            // Optimiser la réponse pour éviter les timeouts - seulement les infos essentielles
-            result = boards.map(board => ({
-              id: board.id,
-              name: board.name,
-              desc: board.desc,
-              url: board.url,
-              shortUrl: board.shortUrl,
-              closed: board.closed,
-              idOrganization: board.idOrganization
-            }));
+            // Limiter à 10 tableaux les plus récents pour éviter les timeouts
+            const recentBoards = boards
+              .filter(board => !board.closed) // Seulement les tableaux ouverts
+              .slice(0, 10) // Limiter à 10 tableaux
+              .map(board => ({
+                id: board.id,
+                name: board.name,
+                url: board.shortUrl // Utiliser shortUrl plus court
+              }));
+            result = recentBoards;
             break;
           case 'get_cards_by_list_id':
             result = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
