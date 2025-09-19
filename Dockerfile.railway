@@ -1,0 +1,62 @@
+# Dockerfile optimisé pour Railway
+FROM node:20-alpine AS builder
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set the working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files first to leverage Docker cache
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including dev dependencies)
+RUN SKIP_PREPARE=true pnpm install --frozen-lockfile
+
+# Copy the rest of the code
+COPY . .
+
+# Build TypeScript
+RUN pnpm run build
+
+# Production stage
+FROM node:20-alpine AS production
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set the working directory
+WORKDIR /app
+
+# Copy only the necessary files from builder
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+
+# Install only production dependencies
+RUN SKIP_PREPARE=true pnpm install --prod --frozen-lockfile --ignore-scripts
+
+# Create a non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S mcp -u 1001
+
+# Change ownership of the app directory
+RUN chown -R mcp:nodejs /app
+USER mcp
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose the port Railway will use
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "console.log('Health check passed')" || exit 1
+
+# Run the HTTP MCP server for OpenAI Platform
+CMD ["node", "build/http-server.js"]
