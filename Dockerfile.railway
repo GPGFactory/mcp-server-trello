@@ -48,9 +48,7 @@ ENV PORT=3000
 # Expose the port Railway will use
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "console.log('Health check passed')" || exit 1
+# No health check needed for Railway
 
 # Run the HTTP MCP server for OpenAI Platform
 CMD ["node", "build/http-server.js"]

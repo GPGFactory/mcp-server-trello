@@ -56,8 +56,8 @@ Dans l'interface OpenAI Platform, ajoutez votre serveur MCP :
 
 Votre serveur expose ces endpoints :
 
+- **`GET /`** - Page d'accueil avec informations du serveur
 - **`POST /mcp`** - Endpoint principal pour les appels MCP
-- **`GET /health`** - Vérification de santé
 - **`GET /tools`** - Liste des outils disponibles
 
 ## 🛠️ **Outils disponibles**
@@ -135,10 +135,10 @@ curl -X POST https://votre-projet-production.up.railway.app/mcp \
 
 ## 🔍 **Test de votre déploiement**
 
-### 1. Vérifiez la santé
+### 1. Vérifiez le serveur
 
 ```bash
-curl https://votre-projet-production.up.railway.app/health
+curl https://votre-projet-production.up.railway.app/
 ```
 
 ### 2. Liste des outils

@@ -33,9 +33,16 @@ trelloClient.loadConfig().catch(() => {
   // Continue with default config if loading fails
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'MCP Server Trello HTTP', 
+    version: '1.3.1',
+    endpoints: {
+      mcp: '/mcp',
+      tools: '/tools'
+    }
+  });
 });
 
 // MCP endpoint for OpenAI Platform
@@ -232,7 +239,7 @@ app.get('/tools', (req, res) => {
 // Start server
 app.listen(port, () => {
   console.log(`🚀 MCP Server Trello HTTP running on port ${port}`);
-  console.log(`🌐 Health check: http://localhost:${port}/health`);
+  console.log(`🌐 Root endpoint: http://localhost:${port}/`);
   console.log(`🛠️  MCP endpoint: http://localhost:${port}/mcp`);
   console.log(`📋 Available tools: http://localhost:${port}/tools`);
 });
