@@ -49,12 +49,29 @@ app.get('/', (req, res) => {
 app.post('/mcp', async (req, res) => {
   try {
     console.log('MCP Request received:', JSON.stringify(req.body, null, 2));
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
     
-    const { method, params } = req.body;
+    // Support both JSON-RPC format and simple format
+    let method, params, id;
+    
+    if (req.body.jsonrpc) {
+      // JSON-RPC format: {"jsonrpc": "2.0", "method": "...", "params": {...}, "id": 1}
+      method = req.body.method;
+      params = req.body.params || {};
+      id = req.body.id;
+    } else {
+      // Simple format: {"method": "...", "params": {...}}
+      method = req.body.method;
+      params = req.body.params || {};
+    }
     
     if (!method) {
       console.log('Error: Method is required');
-      return res.status(400).json({ error: 'Method is required' });
+      return res.status(400).json({ 
+        error: 'Method is required',
+        jsonrpc: '2.0',
+        id: id || null
+      });
     }
 
     let result;
@@ -194,14 +211,30 @@ app.post('/mcp', async (req, res) => {
         return res.status(400).json({ error: `Unknown method: ${method}` });
     }
     
-    console.log('MCP Response:', JSON.stringify({ result }, null, 2));
-    res.json({ result });
+    // Return in JSON-RPC format if request was JSON-RPC
+    const response = req.body.jsonrpc ? {
+      jsonrpc: '2.0',
+      result: result,
+      id: id
+    } : { result };
+    
+    console.log('MCP Response:', JSON.stringify(response, null, 2));
+    res.json(response);
     
   } catch (error) {
     console.error('MCP Error:', error);
-    res.status(500).json({ 
+    const errorResponse = req.body.jsonrpc ? {
+      jsonrpc: '2.0',
+      error: {
+        code: -32603,
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      },
+      id: req.body.id || null
+    } : { 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    });
+    };
+    
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -238,6 +271,24 @@ app.get('/tools', (req, res) => {
   ];
   
   res.json({ tools });
+});
+
+// MCP discovery endpoint
+app.get('/mcp', (req, res) => {
+  res.json({
+    jsonrpc: '2.0',
+    result: {
+      protocolVersion: '2024-11-05',
+      capabilities: {
+        tools: {}
+      },
+      serverInfo: {
+        name: 'mcp-server-trello',
+        version: '1.3.1'
+      }
+    },
+    id: null
+  });
 });
 
 // Start server
