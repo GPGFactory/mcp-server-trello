@@ -142,6 +142,7 @@ app.post('/mcp', async (req, res) => {
         result = {
           tools: [
             {
+              annotations: null,
               name: 'search',
               description: 'Search for content in Trello boards, lists, and cards. Use this to find specific boards or content.',
               inputSchema: {
@@ -158,6 +159,7 @@ app.post('/mcp', async (req, res) => {
               }
             },
             {
+              annotations: null,
               name: 'fetch',
               description: 'Fetch detailed information about a specific Trello resource (board, list, or card) using its ID.',
               inputSchema: {
@@ -174,6 +176,7 @@ app.post('/mcp', async (req, res) => {
               }
             },
             {
+              annotations: null,
               name: 'list_boards',
               description: 'List all accessible Trello boards. Returns the 10 most recent open boards with basic information.',
               inputSchema: {
@@ -185,6 +188,7 @@ app.post('/mcp', async (req, res) => {
               }
             },
             {
+              annotations: null,
               name: 'get_cards_by_list_id',
               description: 'Get all cards from a specific Trello list. Use this to see what tasks or items are in a list.',
               inputSchema: {
@@ -201,6 +205,7 @@ app.post('/mcp', async (req, res) => {
               }
             },
             {
+              annotations: null,
               name: 'get_lists',
               description: 'Get all lists from a specific Trello board. Use this to see the structure of a board.',
               inputSchema: {
@@ -217,6 +222,7 @@ app.post('/mcp', async (req, res) => {
               }
             },
             {
+              annotations: null,
               name: 'create_card',
               description: 'Create a new card in a Trello list. Use this to add new tasks or items to a list.',
               inputSchema: {
@@ -253,31 +259,24 @@ app.post('/mcp', async (req, res) => {
         console.log(`Tool: ${toolName}`);
         
         switch (toolName) {
-          case 'search':
-            // Recherche simple dans les tableaux Trello
-            const allBoards = await trelloClient.listBoards();
-            const query = toolArguments.query.toLowerCase();
-            const searchResults = allBoards
-              .filter(board => 
-                board.name.toLowerCase().includes(query) || 
-                board.desc.toLowerCase().includes(query)
-              )
-              .map(board => ({
-                id: board.id,
-                title: board.name,
-                url: board.url
-              }));
-            
-            // Format requis par OpenAI MCP
-            result = {
-              content: [
-                {
-                  type: "text",
-                  text: JSON.stringify({ results: searchResults })
-                }
-              ]
-            };
-            break;
+              case 'search':
+                // Recherche simple dans les tableaux Trello
+                const allBoards = await trelloClient.listBoards();
+                const query = toolArguments.query.toLowerCase();
+                const searchResults = allBoards
+                  .filter(board =>
+                    board.name.toLowerCase().includes(query) ||
+                    board.desc.toLowerCase().includes(query)
+                  )
+                  .map(board => ({
+                    id: board.id,
+                    title: board.name,
+                    url: board.url
+                  }));
+
+                // Format requis par OpenAI MCP - chaîne JSON simple
+                result = JSON.stringify({ results: searchResults });
+                break;
             
           case 'fetch':
             // Récupération d'informations détaillées sur une ressource
@@ -298,15 +297,8 @@ app.post('/mcp', async (req, res) => {
                 }
               };
               
-              // Format requis par OpenAI MCP
-              result = {
-                content: [
-                  {
-                    type: "text",
-                    text: JSON.stringify(fetchResult)
-                  }
-                ]
-              };
+              // Format requis par OpenAI MCP - chaîne JSON simple
+              result = JSON.stringify(fetchResult);
             } catch (error) {
               // Si ce n'est pas un tableau, essayer comme liste
               try {
@@ -327,15 +319,8 @@ app.post('/mcp', async (req, res) => {
                   }
                 };
                 
-                // Format requis par OpenAI MCP
-                result = {
-                  content: [
-                    {
-                      type: "text",
-                      text: JSON.stringify(fetchResult)
-                    }
-                  ]
-                };
+                // Format requis par OpenAI MCP - chaîne JSON simple
+                result = JSON.stringify(fetchResult);
               } catch (error2) {
                 throw new Error(`No resource found with ID ${id}`);
               }
@@ -353,20 +338,24 @@ app.post('/mcp', async (req, res) => {
                 name: board.name,
                 url: board.shortUrl // Utiliser shortUrl plus court
               }));
-            result = recentBoards;
+            // Format requis par OpenAI MCP - chaîne JSON simple
+            result = JSON.stringify(recentBoards);
             break;
           case 'get_cards_by_list_id':
-            result = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
+            const cards = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
+            result = JSON.stringify(cards);
             break;
           case 'get_lists':
-            result = await trelloClient.getLists(toolArguments.boardId);
+            const lists = await trelloClient.getLists(toolArguments.boardId);
+            result = JSON.stringify(lists);
             break;
           case 'create_card':
-            result = await trelloClient.addCard(toolArguments.boardId, {
+            const newCard = await trelloClient.addCard(toolArguments.boardId, {
               listId: toolArguments.listId,
               name: toolArguments.name,
               description: toolArguments.desc
             });
+            result = JSON.stringify(newCard);
             break;
           default:
             throw new Error(`Unknown tool: ${toolName}`);
