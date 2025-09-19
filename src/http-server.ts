@@ -144,14 +144,14 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'search',
-              description: 'Search for content in Trello boards, lists, and cards. Use this to find specific boards or content.',
+              description: 'Search for content in Trello boards, lists, and cards. Use this to find specific boards or content. Example: search for "SAV" to find all boards containing "SAV" in their name or description.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   query: { 
                     type: 'string', 
-                    description: 'Search query to find boards, lists, or cards. Examples: "SAV", "projet", "Maxence"' 
+                    description: 'Search query to find boards, lists, or cards. Examples: "SAV", "projet", "Maxence", "urgent"' 
                   }
                 },
                 required: ['query'],
@@ -161,14 +161,14 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'fetch',
-              description: 'Fetch detailed information about a specific Trello resource (board, list, or card) using its ID.',
+              description: 'Fetch detailed information about a specific Trello resource (board, list, or card) using its ID. Example: fetch a board by its ID to get full details including description, URL, and metadata.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   id: { 
                     type: 'string', 
-                    description: 'The unique ID of the Trello resource to fetch (board, list, or card ID)' 
+                    description: 'The unique ID of the Trello resource to fetch (board, list, or card ID). Example: "5f8b2c1a3d4e5f6a7b8c9d0e"' 
                   }
                 },
                 required: ['id'],
@@ -178,7 +178,7 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'list_boards',
-              description: 'List all accessible Trello boards. Returns the 10 most recent open boards with basic information.',
+              description: 'List all accessible Trello boards. Returns the 10 most recent open boards with basic information. Use this as the first step to see what boards are available. Example: call list_boards to see all your Trello boards.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
@@ -190,14 +190,14 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'get_cards_by_list_id',
-              description: 'Get all cards from a specific Trello list. Use this to see what tasks or items are in a list.',
+              description: 'Get all cards from a specific Trello list. Use this to see what tasks or items are in a list. Example: get all cards from a "To Do" list to see pending tasks.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list to get cards from' 
+                    description: 'The ID of the Trello list to get cards from. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"' 
                   }
                 },
                 required: ['listId'],
@@ -207,14 +207,14 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'get_lists',
-              description: 'Get all lists from a specific Trello board. Use this to see the structure of a board.',
+              description: 'Get all lists from a specific Trello board. Use this to see the structure of a board and find list IDs. Example: get lists from a project board to see "To Do", "In Progress", "Done" columns.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   boardId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello board to get lists from' 
+                    description: 'The ID of the Trello board to get lists from. Example: "5f8b2c1a3d4e5f6a7b8c9d0e"' 
                   }
                 },
                 required: ['boardId'],
@@ -224,22 +224,22 @@ app.post('/mcp', async (req, res) => {
             {
               annotations: null,
               name: 'create_card',
-              description: 'Create a new card in a Trello list. Use this to add new tasks or items to a list.',
+              description: 'Create a new card in a Trello list. Use this to add new tasks or items to a list. Example: create a card "Fix bug in login" in the "To Do" list.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list where to create the card' 
+                    description: 'The ID of the Trello list where to create the card. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"' 
                   },
                   name: { 
                     type: 'string', 
-                    description: 'The name/title of the new card' 
+                    description: 'The name/title of the new card. Example: "Fix bug in login", "Review document", "Call client"' 
                   },
                   desc: { 
                     type: 'string', 
-                    description: 'Optional description for the new card' 
+                    description: 'Optional description for the new card. Example: "Fix the authentication issue reported by users"' 
                   }
                 },
                 required: ['listId', 'name'],
@@ -538,36 +538,19 @@ app.post('/mcp', async (req, res) => {
 // List available tools
 app.get('/tools', (req, res) => {
   const tools = [
+    'search',
+    'fetch', 
+    'list_boards',
     'get_cards_by_list_id',
     'get_lists',
-    'get_recent_activity',
-    'add_card_to_list',
-    'update_card_details',
-    'archive_card',
-    'move_card',
-    'add_list_to_board',
-    'archive_list',
-    'get_my_cards',
-    'attach_image_to_card',
-    'attach_file_to_card',
-    'list_boards',
-    'set_active_board',
-    'list_workspaces',
-    'create_board',
-    'set_active_workspace',
-    'list_boards_in_workspace',
-    'get_active_board_info',
-    'get_card',
-    'add_comment',
-    'update_comment',
-    'get_checklist_items',
-    'add_checklist_item',
-    'find_checklist_items_by_description',
-    'get_acceptance_criteria',
-    'get_checklist_by_name'
+    'create_card'
   ];
   
-  res.json({ tools });
+  res.json({ 
+    tools,
+    count: tools.length,
+    description: 'Available Trello MCP tools - conform to OpenAI MCP specification'
+  });
 });
 
 // MCP discovery endpoint
@@ -585,6 +568,29 @@ app.get('/mcp', (req, res) => {
       }
     },
     id: null
+  });
+});
+
+// SSE endpoint for OpenAI MCP compatibility
+app.get('/sse', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  // Send initial connection event
+  res.write('data: {"type":"connection","status":"connected"}\n\n');
+  
+  // Keep connection alive
+  const keepAlive = setInterval(() => {
+    res.write('data: {"type":"ping"}\n\n');
+  }, 30000);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
   });
 });
 
