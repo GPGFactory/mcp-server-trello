@@ -81,6 +81,20 @@ app.get('/test', (req, res) => {
 
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
+  // Timeout de 30 secondes pour éviter les blocages
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Request timeout'
+        },
+        id: req.body.id || null
+      });
+    }
+  }, 30000);
+
   try {
     // Log réduit pour éviter la limite Railway - seulement la méthode
     console.log(`MCP Request: ${req.body.method || 'unknown'}`);
@@ -200,7 +214,17 @@ app.post('/mcp', async (req, res) => {
         
         switch (toolName) {
           case 'list_boards':
-            result = await trelloClient.listBoards();
+            const boards = await trelloClient.listBoards();
+            // Optimiser la réponse pour éviter les timeouts - seulement les infos essentielles
+            result = boards.map(board => ({
+              id: board.id,
+              name: board.name,
+              desc: board.desc,
+              url: board.url,
+              shortUrl: board.shortUrl,
+              closed: board.closed,
+              idOrganization: board.idOrganization
+            }));
             break;
           case 'get_cards_by_list_id':
             result = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
@@ -368,10 +392,12 @@ app.post('/mcp', async (req, res) => {
     
     // Log réduit pour éviter la limite Railway
     console.log(`MCP Response: ${method}`);
+    clearTimeout(timeout);
     res.json(response);
     
   } catch (error) {
     console.error('MCP Error:', error);
+    clearTimeout(timeout);
     const errorResponse = req.body.jsonrpc ? {
       jsonrpc: '2.0',
       error: {
@@ -379,10 +405,10 @@ app.post('/mcp', async (req, res) => {
         message: error instanceof Error ? error.message : 'Unknown error occurred'
       },
       id: req.body.id || null
-    } : { 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    } : {
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
-    
+
     res.status(500).json(errorResponse);
   }
 });
