@@ -81,7 +81,7 @@ app.get('/test', (req, res) => {
 
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
-  // Timeout de 30 secondes pour éviter les blocages
+  // Timeout de 10 secondes pour respecter les spécifications OpenAI
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(500).json({
@@ -93,7 +93,7 @@ app.post('/mcp', async (req, res) => {
         id: req.body.id || null
       });
     }
-  }, 30000);
+  }, 10000);
 
   try {
     // Log réduit pour éviter la limite Railway - seulement la méthode
@@ -141,6 +141,38 @@ app.post('/mcp', async (req, res) => {
       case 'tools/list':
         result = {
           tools: [
+            {
+              name: 'search',
+              description: 'Search for content in Trello boards, lists, and cards',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  query: { 
+                    type: 'string', 
+                    description: 'Search query to find boards, lists, or cards' 
+                  }
+                },
+                required: ['query']
+              }
+            },
+            {
+              name: 'fetch',
+              description: 'Fetch detailed information about a specific Trello resource',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  resource: { 
+                    type: 'string', 
+                    description: 'Type of resource (board, list, card)' 
+                  },
+                  id: { 
+                    type: 'string', 
+                    description: 'ID of the resource to fetch' 
+                  }
+                },
+                required: ['resource', 'id']
+              }
+            },
             {
               name: 'list_boards',
               description: 'List all accessible Trello boards',
@@ -213,6 +245,67 @@ app.post('/mcp', async (req, res) => {
         console.log(`Tool: ${toolName}`);
         
         switch (toolName) {
+          case 'search':
+            // Recherche simple dans les tableaux Trello
+            const allBoards = await trelloClient.listBoards();
+            const query = toolArguments.query.toLowerCase();
+            result = allBoards
+              .filter(board => 
+                board.name.toLowerCase().includes(query) || 
+                board.desc.toLowerCase().includes(query)
+              )
+              .map(board => ({
+                id: board.id,
+                name: board.name,
+                desc: board.desc,
+                url: board.url,
+                shortUrl: board.shortUrl,
+                closed: board.closed
+              }));
+            break;
+            
+          case 'fetch':
+            // Récupération d'informations détaillées sur une ressource
+            const resource = toolArguments.resource;
+            const id = toolArguments.id;
+            
+            switch (resource) {
+              case 'board':
+                const board = await trelloClient.getBoardById(id);
+                result = {
+                  id: board.id,
+                  name: board.name,
+                  desc: board.desc,
+                  url: board.url,
+                  shortUrl: board.shortUrl,
+                  closed: board.closed,
+                  idOrganization: board.idOrganization
+                };
+                break;
+              case 'list':
+                const lists = await trelloClient.getLists(id);
+                result = lists.map(list => ({
+                  id: list.id,
+                  name: list.name,
+                  closed: list.closed,
+                  idBoard: list.idBoard
+                }));
+                break;
+              case 'card':
+                const cards = await trelloClient.getCardsByList(undefined, id);
+                result = cards.map(card => ({
+                  id: card.id,
+                  name: card.name,
+                  desc: card.desc,
+                  closed: card.closed,
+                  idList: card.idList
+                }));
+                break;
+              default:
+                throw new Error(`Unknown resource type: ${resource}`);
+            }
+            break;
+            
           case 'list_boards':
             const boards = await trelloClient.listBoards();
             // Optimiser la réponse pour éviter les timeouts - seulement les infos essentielles
@@ -393,7 +486,11 @@ app.post('/mcp', async (req, res) => {
     // Log réduit pour éviter la limite Railway
     console.log(`MCP Response: ${method}`);
     clearTimeout(timeout);
-    res.json(response);
+    
+    // Réponse immédiate pour éviter les timeouts
+    if (!res.headersSent) {
+      res.json(response);
+    }
     
   } catch (error) {
     console.error('MCP Error:', error);
