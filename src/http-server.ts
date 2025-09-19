@@ -125,27 +125,95 @@ app.post('/mcp', async (req, res) => {
         result = {
           tools: [
             {
+              name: 'list_boards',
+              description: 'List all accessible Trello boards',
+              inputSchema: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            },
+            {
               name: 'get_cards_by_list_id',
-              description: 'Get cards from a specific list',
+              description: 'Get cards from a specific Trello list',
               inputSchema: {
                 type: 'object',
                 properties: {
-                  listId: { type: 'string', description: 'The ID of the list' }
+                  listId: { 
+                    type: 'string', 
+                    description: 'The ID of the Trello list' 
+                  }
                 },
                 required: ['listId']
               }
             },
             {
-              name: 'list_boards',
-              description: 'List all accessible boards',
+              name: 'get_lists',
+              description: 'Get all lists from a Trello board',
               inputSchema: {
                 type: 'object',
-                properties: {}
+                properties: {
+                  boardId: { 
+                    type: 'string', 
+                    description: 'The ID of the Trello board' 
+                  }
+                },
+                required: ['boardId']
+              }
+            },
+            {
+              name: 'create_card',
+              description: 'Create a new card in a Trello list',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  listId: { 
+                    type: 'string', 
+                    description: 'The ID of the Trello list' 
+                  },
+                  name: { 
+                    type: 'string', 
+                    description: 'The name of the card' 
+                  },
+                  desc: { 
+                    type: 'string', 
+                    description: 'The description of the card' 
+                  }
+                },
+                required: ['listId', 'name']
               }
             }
-            // Add more tools as needed
           ]
         };
+        break;
+        
+      case 'tools/call':
+        // Handle tool execution
+        const toolName = params.name;
+        const toolArguments = params.arguments || {};
+        
+        console.log(`Tool call: ${toolName}`, toolArguments);
+        
+        switch (toolName) {
+          case 'list_boards':
+            result = await trelloClient.listBoards();
+            break;
+          case 'get_cards_by_list_id':
+            result = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
+            break;
+          case 'get_lists':
+            result = await trelloClient.getLists(toolArguments.boardId);
+            break;
+          case 'create_card':
+            result = await trelloClient.addCard(toolArguments.boardId, {
+              listId: toolArguments.listId,
+              name: toolArguments.name,
+              description: toolArguments.desc
+            });
+            break;
+          default:
+            throw new Error(`Unknown tool: ${toolName}`);
+        }
         break;
         
       case 'get_cards_by_list_id':
@@ -277,6 +345,11 @@ app.post('/mcp', async (req, res) => {
       case 'get_checklist_by_name':
         result = await trelloClient.getChecklistByName(params.name, params.boardId);
         break;
+        
+      case 'notifications/initialized':
+        // Handle initialization notification - no response needed for notifications
+        console.log('Initialization notification received');
+        return res.status(200).json({});
         
       default:
         return res.status(400).json({ error: `Unknown method: ${method}` });
