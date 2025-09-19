@@ -11,6 +11,16 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Logging middleware
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${req.method} ${req.path} - ${req.get('User-Agent') || 'Unknown'}`;
+  console.log(logMessage);
+  // Force output to stderr as well for Railway
+  console.error(logMessage);
+  next();
+});
+
 // Initialize Trello client
 const apiKey = process.env.TRELLO_API_KEY;
 const token = process.env.TRELLO_TOKEN;
@@ -35,14 +45,35 @@ trelloClient.loadConfig().catch(() => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'MCP Server Trello HTTP', 
+  const response = {
+    message: 'MCP Server Trello HTTP',
     version: '1.3.1',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       mcp: '/mcp',
-      tools: '/tools'
+      tools: '/tools',
+      test: '/test'
     }
-  });
+  };
+  console.log('Root endpoint accessed:', response);
+  res.json(response);
+});
+
+// Test endpoint for Railway logs
+app.get('/test', (req, res) => {
+  const testResponse = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    message: 'Server is running and logging works!',
+    environment: process.env.NODE_ENV || 'development',
+    trello: {
+      apiKey: process.env.TRELLO_API_KEY ? 'Set' : 'Missing',
+      token: process.env.TRELLO_TOKEN ? 'Set' : 'Missing'
+    }
+  };
+  console.log('Test endpoint accessed:', testResponse);
+  res.json(testResponse);
 });
 
 // MCP endpoint for OpenAI Platform
@@ -293,10 +324,19 @@ app.get('/mcp', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`🚀 MCP Server Trello HTTP running on port ${port}`);
+  console.log('='.repeat(60));
+  console.log('🚀 MCP SERVER TRELLO HTTP STARTED');
+  console.log('='.repeat(60));
+  console.log(`📡 Port: ${port}`);
   console.log(`🌐 Root endpoint: http://localhost:${port}/`);
   console.log(`🛠️  MCP endpoint: http://localhost:${port}/mcp`);
   console.log(`📋 Available tools: http://localhost:${port}/tools`);
+  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔑 Trello API Key: ${process.env.TRELLO_API_KEY ? '✅ Set' : '❌ Missing'}`);
+  console.log(`🎫 Trello Token: ${process.env.TRELLO_TOKEN ? '✅ Set' : '❌ Missing'}`);
+  console.log('='.repeat(60));
+  console.log('📝 Server ready to receive requests...');
+  console.log('='.repeat(60));
 });
 
 // Graceful shutdown

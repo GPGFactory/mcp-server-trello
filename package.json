@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build:dev": "tsc && chmod +x build/index.js",
-    "build": "tsc && terser build/index.js --compress drop_console=true --mangle --output build/index.js && chmod +x build/index.js && terser build/http-server.js --compress drop_console=true --mangle --output build/http-server.js",
+    "build": "tsc && terser build/index.js --compress drop_console=true --mangle --output build/index.js && chmod +x build/index.js && terser build/http-server.js --compress drop_console=false --mangle --output build/http-server.js",
     "start": "node build/index.js",
     "start:http": "node build/http-server.js",
     "dev": "ts-node --esm src/index.ts",
