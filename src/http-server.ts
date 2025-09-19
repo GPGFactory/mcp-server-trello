@@ -48,9 +48,12 @@ app.get('/', (req, res) => {
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
   try {
+    console.log('MCP Request received:', JSON.stringify(req.body, null, 2));
+    
     const { method, params } = req.body;
     
     if (!method) {
+      console.log('Error: Method is required');
       return res.status(400).json({ error: 'Method is required' });
     }
 
@@ -191,6 +194,7 @@ app.post('/mcp', async (req, res) => {
         return res.status(400).json({ error: `Unknown method: ${method}` });
     }
     
+    console.log('MCP Response:', JSON.stringify({ result }, null, 2));
     res.json({ result });
     
   } catch (error) {
