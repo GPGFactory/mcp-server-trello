@@ -81,7 +81,7 @@ app.get('/test', (req, res) => {
 
 // MCP endpoint for OpenAI Platform
 app.post('/mcp', async (req, res) => {
-  // Timeout de 5 secondes pour éviter les timeouts OpenAI
+  // Timeout de 3 secondes pour éviter les timeouts OpenAI
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(500).json({
@@ -93,7 +93,7 @@ app.post('/mcp', async (req, res) => {
         id: req.body.id || null
       });
     }
-  }, 5000);
+  }, 3000);
 
   try {
     // Log réduit pour éviter la limite Railway - seulement la méthode
@@ -151,11 +151,17 @@ app.post('/mcp', async (req, res) => {
                 properties: {
                   query: { 
                     type: 'string', 
-                    description: 'Search query to find boards, lists, or cards. Examples: "SAV", "projet", "Maxence", "urgent"' 
+                    description: 'Search query to find boards, lists, or cards. Examples: "SAV", "projet", "Maxence", "urgent"',
+                    examples: ["SAV", "projet", "urgent", "finance"]
                   }
                 },
                 required: ['query'],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {"query": "SAV"},
+                  {"query": "projet"},
+                  {"query": "urgent"}
+                ]
               }
             },
             {
@@ -168,23 +174,31 @@ app.post('/mcp', async (req, res) => {
                 properties: {
                   id: { 
                     type: 'string', 
-                    description: 'The unique ID of the Trello resource to fetch (board, list, or card ID). Example: "5f8b2c1a3d4e5f6a7b8c9d0e"' 
+                    description: 'The unique ID of the Trello resource to fetch (board, list, or card ID). Example: "5f8b2c1a3d4e5f6a7b8c9d0e"',
+                    examples: ["5bed4a25a96b2a582160d31b", "5d0cb0d644b32880ea8268ea"]
                   }
                 },
                 required: ['id'],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {"id": "5bed4a25a96b2a582160d31b"},
+                  {"id": "5d0cb0d644b32880ea8268ea"}
+                ]
               }
             },
             {
               annotations: null,
               name: 'list_boards',
-              description: 'List all accessible Trello boards. Returns the 10 most recent open boards with basic information. Use this as the first step to see what boards are available. Example: call list_boards to see all your Trello boards.',
+              description: 'List all accessible Trello boards. Returns the 5 most recent open boards with basic information. Use this as the first step to see what boards are available. Example: call list_boards to see all your Trello boards.',
               inputSchema: {
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 type: 'object',
                 properties: {},
                 required: [],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {}
+                ]
               }
             },
             {
@@ -197,11 +211,16 @@ app.post('/mcp', async (req, res) => {
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list to get cards from. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"' 
+                    description: 'The ID of the Trello list to get cards from. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"',
+                    examples: ["5f8b2c1a3d4e5f6a7b8c9d0f", "5a1b2c3d4e5f6a7b8c9d0e1f"]
                   }
                 },
                 required: ['listId'],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {"listId": "5f8b2c1a3d4e5f6a7b8c9d0f"},
+                  {"listId": "5a1b2c3d4e5f6a7b8c9d0e1f"}
+                ]
               }
             },
             {
@@ -214,11 +233,16 @@ app.post('/mcp', async (req, res) => {
                 properties: {
                   boardId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello board to get lists from. Example: "5f8b2c1a3d4e5f6a7b8c9d0e"' 
+                    description: 'The ID of the Trello board to get lists from. Example: "5f8b2c1a3d4e5f6a7b8c9d0e"',
+                    examples: ["5bed4a25a96b2a582160d31b", "5d0cb0d644b32880ea8268ea"]
                   }
                 },
                 required: ['boardId'],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {"boardId": "5bed4a25a96b2a582160d31b"},
+                  {"boardId": "5d0cb0d644b32880ea8268ea"}
+                ]
               }
             },
             {
@@ -231,19 +255,27 @@ app.post('/mcp', async (req, res) => {
                 properties: {
                   listId: { 
                     type: 'string', 
-                    description: 'The ID of the Trello list where to create the card. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"' 
+                    description: 'The ID of the Trello list where to create the card. Example: "5f8b2c1a3d4e5f6a7b8c9d0f"',
+                    examples: ["5f8b2c1a3d4e5f6a7b8c9d0f", "5a1b2c3d4e5f6a7b8c9d0e1f"]
                   },
                   name: { 
                     type: 'string', 
-                    description: 'The name/title of the new card. Example: "Fix bug in login", "Review document", "Call client"' 
+                    description: 'The name/title of the new card. Example: "Fix bug in login", "Review document", "Call client"',
+                    examples: ["Fix bug in login", "Review document", "Call client", "Update website"]
                   },
                   desc: { 
                     type: 'string', 
-                    description: 'Optional description for the new card. Example: "Fix the authentication issue reported by users"' 
+                    description: 'Optional description for the new card. Example: "Fix the authentication issue reported by users"',
+                    examples: ["Fix the authentication issue reported by users", "Review the contract before signing", "Call to discuss project timeline"]
                   }
                 },
                 required: ['listId', 'name'],
-                additionalProperties: false
+                additionalProperties: false,
+                examples: [
+                  {"listId": "5f8b2c1a3d4e5f6a7b8c9d0f", "name": "Fix bug in login", "desc": "Fix the authentication issue reported by users"},
+                  {"listId": "5a1b2c3d4e5f6a7b8c9d0e1f", "name": "Review document", "desc": "Review the contract before signing"},
+                  {"listId": "5f8b2c1a3d4e5f6a7b8c9d0f", "name": "Call client"}
+                ]
               }
             }
           ]
@@ -328,18 +360,35 @@ app.post('/mcp', async (req, res) => {
             break;
             
           case 'list_boards':
-            const boards = await trelloClient.listBoards();
-            // Limiter à 10 tableaux les plus récents pour éviter les timeouts
-            const recentBoards = boards
-              .filter(board => !board.closed) // Seulement les tableaux ouverts
-              .slice(0, 10) // Limiter à 10 tableaux
-              .map(board => ({
-                id: board.id,
-                name: board.name,
-                url: board.shortUrl // Utiliser shortUrl plus court
-              }));
-            // Format requis par OpenAI MCP - chaîne JSON simple
-            result = JSON.stringify(recentBoards);
+            try {
+              // Timeout spécifique pour l'appel Trello (2 secondes)
+              const boardsPromise = trelloClient.listBoards();
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Trello API timeout')), 2000)
+              );
+              
+              const boards = await Promise.race([boardsPromise, timeoutPromise]) as any[];
+              
+              // Limiter à 5 tableaux les plus récents pour éviter les timeouts
+              const recentBoards = boards
+                .filter((board: any) => !board.closed) // Seulement les tableaux ouverts
+                .slice(0, 5) // Limiter à 5 tableaux pour plus de rapidité
+                .map((board: any) => ({
+                  id: board.id,
+                  name: board.name,
+                  url: board.shortUrl // Utiliser shortUrl plus court
+                }));
+              // Format requis par OpenAI MCP - chaîne JSON simple
+              result = JSON.stringify(recentBoards);
+            } catch (error) {
+              console.error('Error in list_boards:', error);
+              // Retourner une réponse d'erreur au lieu de faire planter
+              result = JSON.stringify({ 
+                error: 'Failed to fetch boards', 
+                message: error instanceof Error ? error.message : 'Unknown error',
+                boards: [] 
+              });
+            }
             break;
           case 'get_cards_by_list_id':
             const cards = await trelloClient.getCardsByList(toolArguments.boardId, toolArguments.listId);
